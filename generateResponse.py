@@ -11,13 +11,14 @@ def call_gemini_api(
     gemini_user_prompt: str,
     gemini_system_instruction: Optional[Dict[str, Any]] = None,
     gemini_inline_data: Optional[Dict[str, str]] = None,
-    gemini_max_tokens: int = 5000,
+    gemini_max_tokens: int = 8096,
     gemini_temperature: float = 1.0,
     gemini_top_p: float = 0.95,
     gemini_top_k: int = 40,
     gemini_candidate_count: int = 1,
     gemini_safety_threshold: str = "BLOCK_ONLY_HIGH",
-    model: str = "gemini-3-pro-preview"
+    gemini_api_version: str = "v1beta",
+    model: str = "gemini-2.5-pro"
 ) -> Dict[str, Any]:
     """
     Make an API call to Google Gemini.
@@ -33,12 +34,13 @@ def call_gemini_api(
         gemini_top_k: Top-k sampling parameter
         gemini_candidate_count: Number of candidates to generate
         gemini_safety_threshold: Safety threshold level
+        gemini_api_version: API version to use (e.g., 'v1beta', 'v1')
         model: Gemini model to use
     
     Returns:
         API response as a dictionary
     """
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/{gemini_api_version}/models/{model}:generateContent?key={api_key}"
     
     # Build parts array
     parts: List[Dict[str, Any]] = [{"text": gemini_user_prompt}]
@@ -74,7 +76,10 @@ def call_gemini_api(
     }
     
     response = requests.post(url, headers=headers, data=json.dumps(payload))
-    response.raise_for_status()
+    
+    if not response.ok:
+        print(f"Error {response.status_code}: {response.text}")
+        response.raise_for_status()
     
     return response.json()
 
