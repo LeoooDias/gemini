@@ -11,7 +11,7 @@ def call_gemini_api(
     gemini_user_prompt: str,
     gemini_system_instruction: Optional[Dict[str, Any]] = None,
     gemini_inline_data: Optional[Dict[str, str]] = None,
-    gemini_max_tokens: int = 1000000,
+    gemini_max_tokens: int = 18000,
     gemini_temperature: float = 1.0,
     gemini_top_p: float = 0.95,
     gemini_top_k: int = 40,
@@ -86,24 +86,27 @@ def call_gemini_api(
 
 if __name__ == "__main__":
     # Check if arguments are provided
-    if len(sys.argv) < 3:
-        print("Usage: python generateResponse.py <system_instruction_file> <user_prompt_file> [binary_file]")
+    if len(sys.argv) < 4:
+        print("Usage: python generateResponse.py <max_tokens> <system_instruction_file> <user_prompt_file> [binary_file]")
         sys.exit(1)
     
-    # Read system instruction from first argument
-    system_instruction_file = sys.argv[1]
+    # Read max_tokens from first argument
+    max_tokens = int(sys.argv[1])
+    
+    # Read system instruction from second argument
+    system_instruction_file = sys.argv[2]
     with open(system_instruction_file, 'r') as f:
         system_instruction_text = f.read()
     
-    # Read user prompt from second argument
-    user_prompt_file = sys.argv[2]
+    # Read user prompt from third argument
+    user_prompt_file = sys.argv[3]
     with open(user_prompt_file, 'r') as f:
         user_prompt_text = f.read()
     
-    # Read binary file if provided as third argument
+    # Read binary file if provided as fourth argument
     inline_data = None
-    if len(sys.argv) >= 4:
-        binary_file = sys.argv[3]
+    if len(sys.argv) >= 5:
+        binary_file = sys.argv[4]
         mime_type, _ = mimetypes.guess_type(binary_file)
         if not mime_type:
             mime_type = "application/octet-stream"
@@ -126,8 +129,7 @@ if __name__ == "__main__":
         gemini_user_prompt=user_prompt_text,
         gemini_system_instruction={"parts": [{"text": system_instruction_text}]},
         gemini_inline_data=inline_data,
-        gemini_max_tokens=1024,
-        gemini_temperature=0.7
+        gemini_max_tokens=max_tokens
     )
     
     # Check for binary outputs in the response and write them to files
