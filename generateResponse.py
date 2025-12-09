@@ -1,12 +1,13 @@
 import requests
 import json
+import sys
 from typing import Optional, Dict, Any
 
 def call_gemini_api(
     api_key: str,
     gemini_user_prompt: str,
     gemini_system_instruction: Optional[Dict[str, Any]] = None,
-    gemini_max_tokens: int = 8192,
+    gemini_max_tokens: int = 5000,
     gemini_temperature: float = 1.0,
     gemini_top_p: float = 0.95,
     gemini_top_k: int = 40,
@@ -71,13 +72,27 @@ def call_gemini_api(
 
 
 if __name__ == "__main__":
-    # Example usage
-    API_KEY = "AIzaSyD_Zw7NFoqMcIWu0KQBvacmhJq5arbV4GQ  "
+    # Check if arguments are provided
+    if len(sys.argv) < 3:
+        print("Usage: python generateResponse.py <system_instruction_file> <user_prompt_file>")
+        sys.exit(1)
+    
+    # Read system instruction from first argument
+    system_instruction_file = sys.argv[1]
+    with open(system_instruction_file, 'r') as f:
+        system_instruction_text = f.read()
+    
+    # Read user prompt from second argument
+    user_prompt_file = sys.argv[2]
+    with open(user_prompt_file, 'r') as f:
+        user_prompt_text = f.read()
+    
+    API_KEY = "AIzaSyD_Zw7NFoqMcIWu0KQBvacmhJq5arbV4GQ"
     
     result = call_gemini_api(
         api_key=API_KEY,
-        gemini_user_prompt="Hello, how are you?",
-        gemini_system_instruction={"parts": [{"text": "You are a helpful assistant."}]},
+        gemini_user_prompt=user_prompt_text,
+        gemini_system_instruction={"parts": [{"text": system_instruction_text}]},
         gemini_max_tokens=1024,
         gemini_temperature=0.7
     )
