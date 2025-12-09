@@ -1,12 +1,16 @@
 import requests
 import json
 import sys
-from typing import Optional, Dict, Any
+import base64
+import mimetypes
+from datetime import datetime
+from typing import Optional, Dict, Any, List
 
 def call_gemini_api(
     api_key: str,
     gemini_user_prompt: str,
     gemini_system_instruction: Optional[Dict[str, Any]] = None,
+    gemini_inline_data: Optional[Dict[str, str]] = None,
     gemini_max_tokens: int = 5000,
     gemini_temperature: float = 1.0,
     gemini_top_p: float = 0.95,
@@ -22,6 +26,7 @@ def call_gemini_api(
         api_key: Your Google API key
         gemini_user_prompt: The user prompt text
         gemini_system_instruction: System instruction object (optional)
+        gemini_inline_data: Inline data object with mime_type and data fields (optional)
         gemini_max_tokens: Maximum output tokens
         gemini_temperature: Temperature for generation
         gemini_top_p: Top-p sampling parameter
@@ -35,12 +40,15 @@ def call_gemini_api(
     """
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     
+    # Build parts array
+    parts: List[Dict[str, Any]] = [{"text": gemini_user_prompt}]
+    if gemini_inline_data:
+        parts.append({"inline_data": gemini_inline_data})
+    
     payload = {
         "contents": [
             {
-                "parts": [
-                    {"text": gemini_user_prompt}
-                ]
+                "parts": parts
             }
         ],
         "generationConfig": {
@@ -74,7 +82,7 @@ def call_gemini_api(
 if __name__ == "__main__":
     # Check if arguments are provided
     if len(sys.argv) < 3:
-        print("Usage: python generateResponse.py <system_instruction_file> <user_prompt_file>")
+        print("Usage: python generateResponse.py <system_instruction_file> <user_prompt_file> [binary_file]")
         sys.exit(1)
     
     # Read system instruction from first argument
@@ -87,14 +95,52 @@ if __name__ == "__main__":
     with open(user_prompt_file, 'r') as f:
         user_prompt_text = f.read()
     
-    API_KEY = "AIzaSyD_Zw7NFoqMcIWu0KQBvacmhJq5arbV4GQ"
+    # Read binary file if provided as third argument
+    inline_data = None
+    if len(sys.argv) >= 4:
+        binary_file = sys.argv[3]
+        mime_type, _ = mimetypes.guess_type(binary_file)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+        
+        with open(binary_file, 'rb') as f:
+            binary_content = f.read()
+            encoded_data = base64.b64encode(binary_content).decode('utf-8')
+        
+        inline_data = {
+            "mime_type": mime_type,
+            "data": encoded_data
+        }
+    
+    # Read API key from file
+    with open('api.key', 'r') as f:
+        API_KEY = f.read().strip()
     
     result = call_gemini_api(
         api_key=API_KEY,
         gemini_user_prompt=user_prompt_text,
         gemini_system_instruction={"parts": [{"text": system_instruction_text}]},
+        gemini_inline_data=inline_data,
         gemini_max_tokens=1024,
         gemini_temperature=0.7
     )
+    
+    # Check for binary outputs in the response and write them to files
+    if "candidates" in result:
+        for idx, candidate in enumerate(result["candidates"]):
+            if "content" in candidate and "parts" in candidate["content"]:
+                for part_idx, part in enumerate(candidate["content"]["parts"]):
+                    if "inline_data" in part:
+                        # Generate unique filename with datetime
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                        mime_type = part["inline_data"].get("mime_type", "application/octet-stream")
+                        extension = mimetypes.guess_extension(mime_type) or ".bin"
+                        filename = f"output_{timestamp}_c{idx}_p{part_idx}{extension}"
+                        
+                        # Decode and write binary data
+                        binary_data = base64.b64decode(part["inline_data"]["data"])
+                        with open(filename, 'wb') as f:
+                            f.write(binary_data)
+                        print(f"Binary output written to: {filename}")
     
     print(json.dumps(result, indent=2))
