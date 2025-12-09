@@ -9,9 +9,9 @@ from typing import Optional, Dict, Any, List
 def call_gemini_api(
     api_key: str,
     gemini_user_prompt: str,
+    gemini_max_tokens: int,
     gemini_system_instruction: Optional[Dict[str, Any]] = None,
     gemini_inline_data: Optional[Dict[str, str]] = None,
-    gemini_max_tokens: int = 18000,
     gemini_temperature: float = 1.0,
     gemini_top_p: float = 0.95,
     gemini_top_k: int = 40,
@@ -26,9 +26,9 @@ def call_gemini_api(
     Args:
         api_key: Your Google API key
         gemini_user_prompt: The user prompt text
+        gemini_max_tokens: Maximum output tokens
         gemini_system_instruction: System instruction object (optional)
         gemini_inline_data: Inline data object with mime_type and data fields (optional)
-        gemini_max_tokens: Maximum output tokens
         gemini_temperature: Temperature for generation
         gemini_top_p: Top-p sampling parameter
         gemini_top_k: Top-k sampling parameter
