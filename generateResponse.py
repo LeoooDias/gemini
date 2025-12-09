@@ -11,7 +11,7 @@ def call_gemini_api(
     gemini_user_prompt: str,
     gemini_system_instruction: Optional[Dict[str, Any]] = None,
     gemini_inline_data: Optional[Dict[str, str]] = None,
-    gemini_max_tokens: int = 8096,
+    gemini_max_tokens: int = 1000000,
     gemini_temperature: float = 1.0,
     gemini_top_p: float = 0.95,
     gemini_top_k: int = 40,
